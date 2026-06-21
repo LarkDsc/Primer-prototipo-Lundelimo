@@ -1,0 +1,12 @@
+# _redirects — Cloudflare Pages
+#
+# Como el sitio es una SPA (Single Page Application), todas las URLs
+# deben servir el mismo index.html y dejar que JavaScript maneje la ruta.
+#
+# Sin este archivo, entrar directamente a /closets daría un 404
+# porque Cloudflare buscaría un archivo /closets.html que no existe.
+#
+# Formato: [origen] [destino] [código HTTP]
+# El 200 es clave: le dice a Cloudflare "sírvelo sin redirigir el navegador"
+
+/*    /index.html    200

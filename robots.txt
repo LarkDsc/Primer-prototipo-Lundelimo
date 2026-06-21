@@ -1,0 +1,10 @@
+# robots.txt — Luna de Limón
+# Le dice a los motores de búsqueda (Google, Bing, etc.)
+# qué pueden y no pueden indexar.
+
+# Permitir todo a todos los bots
+User-agent: *
+Allow: /
+
+# Sitemap (ayuda a Google a encontrar tus páginas)
+Sitemap: https://TU-DOMINIO.com/sitemap.xml

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  sitemap.xml — Luna de Limón
+  Le dice a Google exactamente qué páginas existen en tu sitio.
+  Como por ahora es un solo HTML, solo hay una entrada.
+  Cuando agregues más páginas, añade más <url> aquí.
+
+  Sube este archivo junto con tu index.html en Cloudflare Pages.
+  Después regístralo en Google Search Console (gratis) para
+  que Google indexe tu sitio más rápido.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://TU-DOMINIO.com/</loc>
+    <!-- Cambia la fecha al día que subas el sitio -->
+    <lastmod>2025-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
