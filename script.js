@@ -379,95 +379,124 @@ function renderFooter() {} // el footer se inyecta dentro de cada página
 
 function initCarousels() {
   document.querySelectorAll('.carousel-wrapper').forEach(wrapper => {
-    const track = wrapper.querySelector('.carousel-track');
-    let resumeTimer  = null;
-    let isDragging   = false;
-    let startX       = 0;
-    let scrollLeft   = 0;   // posición manual acumulada durante el drag
-    let dragOffset   = 0;   // cuánto se movió en este drag
-    // Offset base: acumulamos cuánto se había desplazado la animación
-    // cuando el usuario inició el drag, para que no haya salto visual.
-    let animOffset   = 0;
+    const track     = wrapper.querySelector('.carousel-track');
+    // Ancho de la mitad del track (usamos la mitad porque duplicamos las tarjetas)
+    // Lo calculamos después del primer frame para que el DOM esté pintado.
+    let halfWidth   = 0;
+    let pos         = 0;       // posición actual en px (negativa = mover izquierda)
+    let speed       = 0.6;     // px por frame — ajusta para ir más rápido o lento
+    let paused      = false;
+    let resumeTimer = null;
+    let rafId       = null;
 
-    const RESUME_MS  = 30000;  // 30 segundos
+    // Drag state
+    let isDragging  = false;
+    let dragStartX  = 0;
+    let dragStartPos= 0;
+    let lastX       = 0;
+    let velocity    = 0;
 
-    /* ── Helpers ── */
-    function getAnimProgress() {
-      // Lee la posición actual interpolada de la animación CSS
-      const style    = window.getComputedStyle(track);
-      const matrix   = new DOMMatrix(style.transform);
-      return matrix.m41;  // translateX actual en px
+    const RESUME_MS = 30000;   // 30 segundos
+
+    function initDimensions() {
+      // La mitad del track (el set original, sin el duplicado)
+      halfWidth = track.scrollWidth / 2;
     }
 
-    function pauseAndFreeze() {
-      // Captura la posición exacta de la animación en este instante
-      animOffset = getAnimProgress();
-      track.style.animationPlayState = 'paused';
-      track.style.transform = `translateX(${animOffset}px)`;
-      wrapper.classList.add('paused');
+    function loop() {
+      if (!paused) {
+        pos -= speed;
+        // Loop infinito: cuando llegamos al final del set original, saltamos al inicio
+        if (Math.abs(pos) >= halfWidth) pos += halfWidth;
+      }
+      track.style.transform = `translateX(${pos}px)`;
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function pauseCarousel() {
+      paused = true;
       clearTimeout(resumeTimer);
-      resumeTimer = setTimeout(resume, RESUME_MS);
+      resumeTimer = setTimeout(() => { paused = false; }, RESUME_MS);
     }
 
-    function resume() {
-      // Al reanudar, reseteamos el transform manual y dejamos correr la animación
-      track.style.transform = '';
-      track.style.animationPlayState = 'running';
-      wrapper.classList.remove('paused');
-      dragOffset = 0;
-    }
-
-    /* ── Mouse drag ── */
+    /* ── Mouse ── */
     wrapper.addEventListener('mousedown', e => {
-      // No pausar si el click es en un botón hijo
       if (e.target.closest('button')) return;
-      isDragging = true;
-      startX     = e.clientX;
-      pauseAndFreeze();
-      scrollLeft = animOffset;
+      isDragging   = true;
+      dragStartX   = e.clientX;
+      dragStartPos = pos;
+      lastX        = e.clientX;
+      velocity     = 0;
+      pauseCarousel();
       wrapper.style.cursor = 'grabbing';
       e.preventDefault();
     });
 
     window.addEventListener('mousemove', e => {
       if (!isDragging) return;
-      const delta = e.clientX - startX;
-      dragOffset  = delta;
-      track.style.transform = `translateX(${scrollLeft + delta}px)`;
+      velocity = e.clientX - lastX;
+      lastX    = e.clientX;
+      const delta = e.clientX - dragStartX;
+      pos = dragStartPos + delta;
+      // Mantener dentro del rango de loop
+      if (pos > 0) pos -= halfWidth;
+      if (Math.abs(pos) >= halfWidth) pos += halfWidth;
     });
 
     window.addEventListener('mouseup', () => {
       if (!isDragging) return;
-      isDragging = false;
+      isDragging           = false;
       wrapper.style.cursor = '';
-      // Actualiza el punto base para el próximo drag en la misma pausa
-      animOffset = scrollLeft + dragOffset;
+      // Inercia suave: continúa en la dirección del gesto
+      if (Math.abs(velocity) > 1) {
+        pos += velocity * 4;
+        if (pos > 0) pos -= halfWidth;
+        if (Math.abs(pos) >= halfWidth) pos += halfWidth;
+      }
+      // Reinicia el timer de reanudación desde el momento en que sueltan
       clearTimeout(resumeTimer);
-      resumeTimer = setTimeout(resume, RESUME_MS);
+      resumeTimer = setTimeout(() => { paused = false; }, RESUME_MS);
     });
 
-    /* ── Touch drag ── */
+    /* ── Touch ── */
     wrapper.addEventListener('touchstart', e => {
       if (e.target.closest('button')) return;
-      isDragging = true;
-      startX     = e.touches[0].clientX;
-      pauseAndFreeze();
-      scrollLeft = animOffset;
+      isDragging   = true;
+      dragStartX   = e.touches[0].clientX;
+      dragStartPos = pos;
+      lastX        = e.touches[0].clientX;
+      velocity     = 0;
+      pauseCarousel();
     }, { passive: true });
 
     wrapper.addEventListener('touchmove', e => {
       if (!isDragging) return;
-      const delta = e.touches[0].clientX - startX;
-      dragOffset  = delta;
-      track.style.transform = `translateX(${scrollLeft + delta}px)`;
+      velocity = e.touches[0].clientX - lastX;
+      lastX    = e.touches[0].clientX;
+      const delta = e.touches[0].clientX - dragStartX;
+      pos = dragStartPos + delta;
+      if (pos > 0) pos -= halfWidth;
+      if (Math.abs(pos) >= halfWidth) pos += halfWidth;
     }, { passive: true });
 
     wrapper.addEventListener('touchend', () => {
       if (!isDragging) return;
       isDragging = false;
-      animOffset = scrollLeft + dragOffset;
+      if (Math.abs(velocity) > 1) {
+        pos += velocity * 4;
+        if (pos > 0) pos -= halfWidth;
+        if (Math.abs(pos) >= halfWidth) pos += halfWidth;
+      }
       clearTimeout(resumeTimer);
-      resumeTimer = setTimeout(resume, RESUME_MS);
+      resumeTimer = setTimeout(() => { paused = false; }, RESUME_MS);
+    });
+
+    // Arranca después de un frame para que el DOM esté listo
+    requestAnimationFrame(() => {
+      initDimensions();
+      // Quita la animación CSS — el movimiento ahora lo maneja JS
+      track.style.animation = 'none';
+      loop();
     });
   });
 }

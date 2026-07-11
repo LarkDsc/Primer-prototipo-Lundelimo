@@ -245,15 +245,8 @@ main { padding-top: var(--nav-h); min-height: 100vh; }
 .carousel-wrapper:active { cursor: grabbing; }
 .carousel-track {
   display: flex; gap: 1.5rem;
-  animation: scrollTrack 28s linear infinite;
-  animation-play-state: var(--is-paused);
   width: max-content;
-}
-.carousel-wrapper.paused .carousel-track { animation-play-state: paused; }
-
-@keyframes scrollTrack {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  will-change: transform;
 }
 
 .carousel-card {
