@@ -286,7 +286,7 @@ function renderComida() {
 
 function buildProductCard(p) {
   const visual = p.img
-    ? `<img src="${p.img}" alt="${p.name}" loading="lazy" />`
+    ? `<img src="${p.img}" alt="${p.name}" loading="lazy" draggable="false" />`
     : `<span role="img" aria-label="${p.name}">${p.emoji}</span>`;
 
   return `
@@ -313,10 +313,14 @@ function buildProductCard(p) {
 function buildCarousel(products, id, cat) {
   // Duplicamos los productos para lograr el loop infinito
   const cards = [...products, ...products]
-    .map(p => `
+    .map(p => {
+      const visual = p.img
+        ? `<img src="${p.img}" alt="${p.name}" loading="lazy" draggable="false" />`
+        : `<span role="img" aria-label="${p.name}">${p.emoji}</span>`;
+      return `
       <div class="carousel-card">
         <div class="carousel-card-img bg-${cat}">
-          <span role="img" aria-label="${p.name}">${p.emoji}</span>
+          ${visual}
         </div>
         <div class="carousel-card-body">
           <h4>${p.name}</h4>
@@ -327,7 +331,7 @@ function buildCarousel(products, id, cat) {
           </div>
         </div>
       </div>
-    `).join('');
+    `}).join('');
 
   return `
     <div class="carousel-wrapper" id="${id}" data-paused="false">
