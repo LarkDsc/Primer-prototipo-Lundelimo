@@ -12,6 +12,33 @@ const CONFIG = {
 };
 
 /* ──────────────────────────────────────────
+   2. DATOS GEOGRÁFICOS — Atlántico
+   Para omitir municipios: borra o comenta la línea del municipio en COVERAGE.
+   Para omitir barrios: borra entradas del array correspondiente en BARRIOS.
+   ────────────────────────────────────────── */
+
+// Municipios con lista de sectores propia (distinta de Barranquilla)
+// Si un municipio NO aparece aquí, mostrará campo de texto libre.
+const SECTORS = {
+  'Soledad':        ['Centro','Villa Estadio','La Paz','Los Robles','El Oasis','Ciudadela Metropolitana','Las Gardenias','Ciudad Caribe','Los Almendros','Los Pinos','Villa Marbella','Ferrocarril','Las Margaritas','San José','San Miguel','Villa del Rey'],
+  'Puerto Colombia':['Centro','El Pueblito','Pradomar','Sabanilla','Salgar','Los Uvos','Barrio Nuevo'],
+  'Malambo':        ['Centro','El Carmen','La Manga','Bello Horizonte','Villa del Mar'],
+  'Galapa':         ['Centro','La Manga','Los Olivos','La Esperanza'],
+  'Baranoa':        ['Centro','La Manga','Los Laureles','Urbanización La Paz'],
+};
+
+// Barrios de Barranquilla por localidad
+// Para quitar barrios: elimina entradas del array.
+// Para quitar una localidad entera: elimina la clave.
+const BARRIOS = {
+  'Riomar': ['Adela de Char','Altos de Riomar','Altos del Limón','Altos del Prado','Andalucía','Buenavista','El Castillo','El Limoncito','El Poblado','La Castellana','La Floresta','Las Flores','Las Tres Avemarías','San Marino','San Salvador','San Vicente','Santa Mónica','Villa Campestre','Villa Carolina','Villa del Este','Villa Santos'],
+  'Norte-Centro Histórico': ['Barrio Abajo','Bellavista','Boston','Campo Alegre','Centro','Ciudad Jardín','El Boliche','El Golf','El Porvenir','El Recreo','El Rosario','Granadillo','La Bendición de Dios','La Campiña','La Concepción','La Felicidad','Las Colinas','Las Delicias','Las Mercedes','Los Nogales','Lucero','Montecristo','Nuevo Horizonte','Parque Rosado','San Francisco','Villa Country','Villa Tarel','Villanueva','Zona Industrial Vía 40'],
+  'Metropolitana': ['7 de Abril','Buenos Aires','Carrizal','Cevillar','Ciudadela 20 de Julio','El Santuario','La Sierrita','La Victoria','Las Américas','Las Cayenas','Las Gardenias','Las Granjas','Los Continentes','Los Girasoles','Santa María','Santo Domingo de Guzmán','Villa San Carlos'],
+  'Suroriente': ['Atlántico','Bella Arena','Chiquinquirá','El Campito','El Milagro','El Valle','José Antonio Galán','La Alboraya','La Chinita','La Magdalena','La Victoria','Las Nieves','Las Palmas','Las Palmeras','Los Laureles','Los Trupillos','Primero de Mayo','Rebolo','San Nicolás','Santa Elena','Simón Bolívar','Universal I','Universal II','Villa Blanca','Villa del Carmen','Zona Franca'],
+  'Suroccidente': ['Alfonso López','Boyacá','California','Ciudad Modesto','El Carmen','El Pueblo','El Romance','Evaristo Sourdis','Hipódromo','Kennedy','La Ceiba','La Cordialidad','La Cuchilla de Villate','La Libertad','La Manga','La Pradera','Las Estrellas','Las Malvinas','Las Terrazas','Lipaya','Loma Fresca','Los Andes','Los Olivos I','Los Olivos II','Los Pinos','Los Rosales','Me Quejo','Montes','Nueva Colombia','Nueva Granada','Olaya Herrera','Pasadena','Por Fin','San Felipe','San Isidro','San José','San Roque','Santa Elena','Siape','Tayrona','Villa Kennedy','Villa Rosario'],
+};
+
+/* ──────────────────────────────────────────
    2. BASE DE DATOS DE PRODUCTOS
    Campos: id, name, cat, price, priceNum, desc, emoji, badge, img
    cat: 'closets' | 'comida'
@@ -620,8 +647,6 @@ function closeCart() {
 
 function openModal() {
   closeCart();
-
-  // Rellena el resumen del pedido
   const summary = document.getElementById('modalSummary');
   if (summary) {
     summary.innerHTML = `
@@ -638,7 +663,8 @@ function openModal() {
       </div>
     `;
   }
-
+  // Resetea la cascada al abrir
+  resetAddressFields();
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -648,24 +674,95 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
+/* ── Cascada de dirección ── */
+
+function resetAddressFields() {
+  document.getElementById('fmunicipality').value = '';
+  document.getElementById('flocality').value = '';
+  document.getElementById('fneighborhood-select').innerHTML = '<option value="">Selecciona un barrio…</option>';
+  document.getElementById('fneighborhood-text').value = '';
+  hide('localityGroup');
+  hide('neighborhoodSelectGroup');
+  hide('neighborhoodTextGroup');
+}
+
+function show(id) { document.getElementById(id).style.display = ''; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+function onMunicipalityChange() {
+  const municipality = document.getElementById('fmunicipality').value;
+
+  // Resetea los niveles inferiores
+  document.getElementById('flocality').value = '';
+  document.getElementById('fneighborhood-select').innerHTML = '<option value="">Selecciona un barrio…</option>';
+  document.getElementById('fneighborhood-text').value = '';
+  hide('localityGroup');
+  hide('neighborhoodSelectGroup');
+  hide('neighborhoodTextGroup');
+
+  if (!municipality) return;
+
+  if (municipality === 'Barranquilla') {
+    // Nivel 2: localidad
+    show('localityGroup');
+  } else if (SECTORS[municipality]) {
+    // Municipio con lista propia de sectores
+    populateSelect('fneighborhood-select', SECTORS[municipality]);
+    show('neighborhoodSelectGroup');
+  } else {
+    // Municipio sin lista → texto libre
+    show('neighborhoodTextGroup');
+  }
+}
+
+function onLocalityChange() {
+  const locality = document.getElementById('flocality').value;
+  document.getElementById('fneighborhood-select').innerHTML = '<option value="">Selecciona un barrio…</option>';
+  hide('neighborhoodSelectGroup');
+
+  if (!locality || !BARRIOS[locality]) return;
+
+  populateSelect('fneighborhood-select', BARRIOS[locality]);
+  show('neighborhoodSelectGroup');
+}
+
+function populateSelect(selectId, items) {
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = '<option value="">Selecciona…</option>' +
+    items.map(item => `<option>${item}</option>`).join('');
+}
+
+/* ── Lectura del barrio según el modo activo ── */
+function getNeighborhood() {
+  const municipality = document.getElementById('fmunicipality').value;
+  if (municipality === 'Barranquilla') {
+    return document.getElementById('fneighborhood-select').value;
+  }
+  if (SECTORS[municipality]) {
+    return document.getElementById('fneighborhood-select').value;
+  }
+  return document.getElementById('fneighborhood-text').value.trim();
+}
+
 function sendToWhatsApp() {
   const name         = document.getElementById('fname').value.trim();
   const phone        = document.getElementById('fphone').value.trim();
   const municipality = document.getElementById('fmunicipality').value;
-  const neighborhood = document.getElementById('fneighborhood').value.trim();
+  const locality     = document.getElementById('flocality').value;
+  const neighborhood = getNeighborhood();
   const address      = document.getElementById('faddress').value.trim();
   const apt          = document.getElementById('fapt').value.trim();
   const reference    = document.getElementById('freference').value.trim();
-  const schedule     = document.getElementById('fschedule').value;
-  const scheduleNote = document.getElementById('fschedule-note').value.trim();
-  const notes        = document.getElementById('fnotes').value.trim();
+  const schedule     = document.getElementById('fschedule').value.trim();
 
-  // Validación — campos obligatorios
-  if (!name)         { alert('Por favor ingresa tu nombre.'); document.getElementById('fname').focus(); return; }
-  if (!phone)        { alert('Por favor ingresa tu WhatsApp.'); document.getElementById('fphone').focus(); return; }
-  if (!municipality) { alert('Por favor selecciona un municipio.'); document.getElementById('fmunicipality').focus(); return; }
-  if (!address)      { alert('Por favor ingresa tu dirección.'); document.getElementById('faddress').focus(); return; }
-  if (!schedule)     { alert('Por favor selecciona un horario de recepción.'); document.getElementById('fschedule').focus(); return; }
+  // Validaciones
+  if (!name)         { alert('Por favor ingresa tu nombre.');           document.getElementById('fname').focus();         return; }
+  if (!phone)        { alert('Por favor ingresa tu WhatsApp.');         document.getElementById('fphone').focus();        return; }
+  if (!municipality) { alert('Por favor selecciona un municipio.');     document.getElementById('fmunicipality').focus(); return; }
+  if (municipality === 'Barranquilla' && !locality) {
+                       alert('Por favor selecciona una localidad.');    document.getElementById('flocality').focus();     return; }
+  if (!address)      { alert('Por favor ingresa tu dirección.');        document.getElementById('faddress').focus();      return; }
+  if (!schedule)     { alert('Por favor indica tu horario de recepción.'); document.getElementById('fschedule').focus(); return; }
 
   const phoneClean = phone.replace(/\s/g, '');
   if (!/^3\d{9}$/.test(phoneClean)) {
@@ -677,15 +774,11 @@ function sendToWhatsApp() {
   // Construir líneas de dirección
   const addressLines = [
     `• Municipio: ${municipality}`,
+    locality     ? `• Localidad: ${locality}`           : null,
     neighborhood ? `• Barrio / Sector: ${neighborhood}` : null,
     `• Dirección: ${address}`,
     apt          ? `• Apto / Casa: ${apt}`              : null,
     reference    ? `• Referencia: ${reference}`         : null,
-  ].filter(Boolean).join('\n');
-
-  const scheduleLines = [
-    `• Franja: ${schedule}`,
-    scheduleNote ? `• Nota: ${scheduleNote}` : null,
   ].filter(Boolean).join('\n');
 
   const itemLines = cart
@@ -699,8 +792,7 @@ function sendToWhatsApp() {
     `📦 *Pedido:*\n${itemLines}\n` +
     `*Total estimado:* ${formatCOP(cartTotal())}\n\n` +
     `📍 *Dirección de entrega:*\n${addressLines}\n\n` +
-    `⏰ *Horario de recepción:*\n${scheduleLines}` +
-    (notes ? `\n\n📝 *Notas:* ${notes}` : '')
+    `⏰ *Horario de recepción:* ${schedule}`
   );
 
   window.open(`https://wa.me/${CONFIG.waNumber}?text=${msg}`, '_blank');

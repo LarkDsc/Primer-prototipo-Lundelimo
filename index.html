@@ -78,11 +78,13 @@
           </div>
         </div>
 
-        <!-- Dirección -->
+        <!-- Dirección en cascada -->
         <p class="form-section-label">Dirección de entrega</p>
+
+        <!-- Nivel 1: Municipio -->
         <div class="form-group">
           <label for="fmunicipality">Municipio</label>
-          <select id="fmunicipality">
+          <select id="fmunicipality" onchange="onMunicipalityChange()">
             <option value="">Selecciona un municipio…</option>
             <optgroup label="Área Metropolitana">
               <option>Barranquilla</option>
@@ -119,10 +121,35 @@
             </optgroup>
           </select>
         </div>
-        <div class="form-group">
-          <label for="fneighborhood">Barrio / Sector <span class="optional">(opcional)</span></label>
-          <input type="text" id="fneighborhood" placeholder="Ej: El Recreo, Riomar, Centro…" />
+
+        <!-- Nivel 2: Localidad (solo si Barranquilla) -->
+        <div class="form-group" id="localityGroup" style="display:none">
+          <label for="flocality">Localidad</label>
+          <select id="flocality" onchange="onLocalityChange()">
+            <option value="">Selecciona una localidad…</option>
+            <option>Riomar</option>
+            <option>Norte-Centro Histórico</option>
+            <option>Metropolitana</option>
+            <option>Suroriente</option>
+            <option>Suroccidente</option>
+          </select>
         </div>
+
+        <!-- Nivel 3a: Barrio — select (Barranquilla y municipios con lista) -->
+        <div class="form-group" id="neighborhoodSelectGroup" style="display:none">
+          <label for="fneighborhood-select">Barrio</label>
+          <select id="fneighborhood-select">
+            <option value="">Selecciona un barrio…</option>
+          </select>
+        </div>
+
+        <!-- Nivel 3b: Sector — texto libre (municipios sin lista detallada) -->
+        <div class="form-group" id="neighborhoodTextGroup" style="display:none">
+          <label for="fneighborhood-text">Barrio / Sector <span class="optional">(opcional)</span></label>
+          <input type="text" id="fneighborhood-text" placeholder="Nombre del barrio o sector" />
+        </div>
+
+        <!-- Dirección, apto y referencia -->
         <div class="form-group">
           <label for="faddress">Dirección</label>
           <input type="text" id="faddress" placeholder="Ej: Cra 45 #74-12" autocomplete="street-address" />
@@ -138,28 +165,11 @@
           </div>
         </div>
 
-        <!-- Horario -->
+        <!-- Horario libre -->
         <p class="form-section-label">Horario de recepción</p>
         <div class="form-group">
           <label for="fschedule">¿Cuándo puedes recibir?</label>
-          <select id="fschedule">
-            <option value="">Selecciona una franja…</option>
-            <option>Mañana (8:00 am – 12:00 m)</option>
-            <option>Tarde (12:00 m – 6:00 pm)</option>
-            <option>Noche (6:00 pm – 9:00 pm)</option>
-            <option>Todo el día (desde las 8:00 am)</option>
-            <option>Acordar con el negocio</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="fschedule-note">Nota de horario <span class="optional">(opcional)</span></label>
-          <input type="text" id="fschedule-note" placeholder="Ej: Solo sábados, después de las 3 pm…" />
-        </div>
-
-        <!-- Notas generales -->
-        <div class="form-group">
-          <label for="fnotes">Notas adicionales <span class="optional">(opcional)</span></label>
-          <textarea id="fnotes" placeholder="Medidas especiales, fecha deseada, instrucciones de instalación…"></textarea>
+          <input type="text" id="fschedule" placeholder="Ej: lunes a viernes después de las 3 pm" />
         </div>
 
         <div class="modal-summary" id="modalSummary"></div>
