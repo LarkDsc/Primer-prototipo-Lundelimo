@@ -649,32 +649,58 @@ function closeModal() {
 }
 
 function sendToWhatsApp() {
-  const name  = document.getElementById('fname').value.trim();
-  const phone = document.getElementById('fphone').value.trim();
-  const city  = document.getElementById('fcity').value.trim();
-  const notes = document.getElementById('fnotes').value.trim();
+  const name         = document.getElementById('fname').value.trim();
+  const phone        = document.getElementById('fphone').value.trim();
+  const municipality = document.getElementById('fmunicipality').value;
+  const neighborhood = document.getElementById('fneighborhood').value.trim();
+  const address      = document.getElementById('faddress').value.trim();
+  const apt          = document.getElementById('fapt').value.trim();
+  const reference    = document.getElementById('freference').value.trim();
+  const schedule     = document.getElementById('fschedule').value;
+  const scheduleNote = document.getElementById('fschedule-note').value.trim();
+  const notes        = document.getElementById('fnotes').value.trim();
 
-  if (!name || !phone || !city) {
-    alert('Por favor completa nombre, WhatsApp y ciudad.');
-    return;
-  }
+  // Validación — campos obligatorios
+  if (!name)         { alert('Por favor ingresa tu nombre.'); document.getElementById('fname').focus(); return; }
+  if (!phone)        { alert('Por favor ingresa tu WhatsApp.'); document.getElementById('fphone').focus(); return; }
+  if (!municipality) { alert('Por favor selecciona un municipio.'); document.getElementById('fmunicipality').focus(); return; }
+  if (!address)      { alert('Por favor ingresa tu dirección.'); document.getElementById('faddress').focus(); return; }
+  if (!schedule)     { alert('Por favor selecciona un horario de recepción.'); document.getElementById('fschedule').focus(); return; }
 
   const phoneClean = phone.replace(/\s/g, '');
   if (!/^3\d{9}$/.test(phoneClean)) {
     alert('Ingresa un celular colombiano válido (ej: 314 456 7890).');
+    document.getElementById('fphone').focus();
     return;
   }
 
-  const itemLines = cart.map(i => `• ${i.product.emoji} ${i.product.name} ×${i.qty} — ${i.product.price}`).join('\n');
+  // Construir líneas de dirección
+  const addressLines = [
+    `• Municipio: ${municipality}`,
+    neighborhood ? `• Barrio / Sector: ${neighborhood}` : null,
+    `• Dirección: ${address}`,
+    apt          ? `• Apto / Casa: ${apt}`              : null,
+    reference    ? `• Referencia: ${reference}`         : null,
+  ].filter(Boolean).join('\n');
+
+  const scheduleLines = [
+    `• Franja: ${schedule}`,
+    scheduleNote ? `• Nota: ${scheduleNote}` : null,
+  ].filter(Boolean).join('\n');
+
+  const itemLines = cart
+    .map(i => `• ${i.product.emoji} ${i.product.name} ×${i.qty} — ${i.product.price}`)
+    .join('\n');
 
   const msg = encodeURIComponent(
     `¡Hola ${CONFIG.businessName}! 🌙\n\n` +
     `*Nombre:* ${name}\n` +
-    `*WhatsApp:* ${phoneClean}\n` +
-    `*Ciudad:* ${city}\n\n` +
-    `*Pedido:*\n${itemLines}\n\n` +
-    `*Total estimado:* ${formatCOP(cartTotal())}\n` +
-    (notes ? `\n*Notas:* ${notes}` : '')
+    `*WhatsApp:* ${phoneClean}\n\n` +
+    `📦 *Pedido:*\n${itemLines}\n` +
+    `*Total estimado:* ${formatCOP(cartTotal())}\n\n` +
+    `📍 *Dirección de entrega:*\n${addressLines}\n\n` +
+    `⏰ *Horario de recepción:*\n${scheduleLines}` +
+    (notes ? `\n\n📝 *Notas:* ${notes}` : '')
   );
 
   window.open(`https://wa.me/${CONFIG.waNumber}?text=${msg}`, '_blank');
