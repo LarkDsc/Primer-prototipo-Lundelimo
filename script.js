@@ -235,7 +235,9 @@ function renderHome() {
       <div class="section-inner">
         <div class="about-grid">
           <div class="about-visual">
-            <div class="about-blob" role="img" aria-label="Luna de Limón">🌙</div>
+            <div class="about-blob">
+                <img src="https://res.cloudinary.com/dm3depln2/image/upload/v1783806825/IMG_20260711_154942_762_kvexne.jpg" alt="Luna de Limón" width="160" style="border-radius:50%;object-fit:cover;" />
+            </div>
           </div>
           <div class="about-text">
             <p class="section-eyebrow">Nuestra historia</p>
