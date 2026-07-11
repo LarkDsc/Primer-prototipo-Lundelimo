@@ -7,7 +7,7 @@
    1. CONFIGURACIÓN — edita aquí tus datos
    ────────────────────────────────────────── */
 const CONFIG = {
-  waNumber: '573000000000',   // ← tu número: 57 + celular sin espacios
+  waNumber: '573107102765',
   businessName: 'Luna de Limón',
 };
 
@@ -153,10 +153,6 @@ function renderHome() {
           <div class="hero-badge">✦ Negocio colombiano con corazón</div>
           <h1>Tu hogar y tu mesa<br/>en <em>un solo lugar</em></h1>
           <p class="hero-sub">Closets fabricados a medida y comida casera lista para compartir. Con la calidez de siempre.</p>
-          <div class="hero-actions">
-            <a href="/closets" class="btn-primary" data-link>Ver closets</a>
-            <a href="/comida" class="btn-ghost" data-link>Ver comida</a>
-          </div>
         </div>
         <div class="hero-cards">
           <div class="hero-card" onclick="navigate('/closets')">
@@ -187,7 +183,6 @@ function renderHome() {
           </a>
         </div>
         ${buildCarousel(FEATURED.closets, 'closets-carousel', 'closets')}
-        <p class="carousel-hint">← Desliza automáticamente · Toca para pausar →</p>
       </div>
     </section>
 
@@ -205,7 +200,6 @@ function renderHome() {
           </a>
         </div>
         ${buildCarousel(FEATURED.comida, 'comida-carousel', 'comida')}
-        <p class="carousel-hint">← Desliza automáticamente · Toca para pausar →</p>
       </div>
     </section>
 
@@ -385,21 +379,96 @@ function renderFooter() {} // el footer se inyecta dentro de cada página
 
 function initCarousels() {
   document.querySelectorAll('.carousel-wrapper').forEach(wrapper => {
-    let resumeTimer = null;
+    const track = wrapper.querySelector('.carousel-track');
+    let resumeTimer  = null;
+    let isDragging   = false;
+    let startX       = 0;
+    let scrollLeft   = 0;   // posición manual acumulada durante el drag
+    let dragOffset   = 0;   // cuánto se movió en este drag
+    // Offset base: acumulamos cuánto se había desplazado la animación
+    // cuando el usuario inició el drag, para que no haya salto visual.
+    let animOffset   = 0;
 
-    function pause() {
-      wrapper.classList.add('paused');
-      clearTimeout(resumeTimer);
-      // Reanuda después de 40 segundos
-      resumeTimer = setTimeout(() => {
-        wrapper.classList.remove('paused');
-      }, 40000);
+    const RESUME_MS  = 30000;  // 30 segundos
+
+    /* ── Helpers ── */
+    function getAnimProgress() {
+      // Lee la posición actual interpolada de la animación CSS
+      const style    = window.getComputedStyle(track);
+      const matrix   = new DOMMatrix(style.transform);
+      return matrix.m41;  // translateX actual en px
     }
 
-    // Solo pausar si el toque/click es DENTRO del carrusel
-    wrapper.addEventListener('mousedown', pause);
-    wrapper.addEventListener('touchstart', pause, { passive: true });
-    // El scroll de la página o clicks fuera no pausan el carrusel
+    function pauseAndFreeze() {
+      // Captura la posición exacta de la animación en este instante
+      animOffset = getAnimProgress();
+      track.style.animationPlayState = 'paused';
+      track.style.transform = `translateX(${animOffset}px)`;
+      wrapper.classList.add('paused');
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(resume, RESUME_MS);
+    }
+
+    function resume() {
+      // Al reanudar, reseteamos el transform manual y dejamos correr la animación
+      track.style.transform = '';
+      track.style.animationPlayState = 'running';
+      wrapper.classList.remove('paused');
+      dragOffset = 0;
+    }
+
+    /* ── Mouse drag ── */
+    wrapper.addEventListener('mousedown', e => {
+      // No pausar si el click es en un botón hijo
+      if (e.target.closest('button')) return;
+      isDragging = true;
+      startX     = e.clientX;
+      pauseAndFreeze();
+      scrollLeft = animOffset;
+      wrapper.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (!isDragging) return;
+      const delta = e.clientX - startX;
+      dragOffset  = delta;
+      track.style.transform = `translateX(${scrollLeft + delta}px)`;
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      wrapper.style.cursor = '';
+      // Actualiza el punto base para el próximo drag en la misma pausa
+      animOffset = scrollLeft + dragOffset;
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(resume, RESUME_MS);
+    });
+
+    /* ── Touch drag ── */
+    wrapper.addEventListener('touchstart', e => {
+      if (e.target.closest('button')) return;
+      isDragging = true;
+      startX     = e.touches[0].clientX;
+      pauseAndFreeze();
+      scrollLeft = animOffset;
+    }, { passive: true });
+
+    wrapper.addEventListener('touchmove', e => {
+      if (!isDragging) return;
+      const delta = e.touches[0].clientX - startX;
+      dragOffset  = delta;
+      track.style.transform = `translateX(${scrollLeft + delta}px)`;
+    }, { passive: true });
+
+    wrapper.addEventListener('touchend', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      animOffset = scrollLeft + dragOffset;
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(resume, RESUME_MS);
+    });
   });
 }
 

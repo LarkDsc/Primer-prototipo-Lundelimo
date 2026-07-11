@@ -195,8 +195,7 @@ main { padding-top: var(--nav-h); min-height: 100vh; }
   background: var(--gradient-brand);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.hero-sub { font-size: 1rem; color: var(--muted); max-width: 400px; margin-bottom: 2.2rem; }
-.hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+.hero-sub { font-size: 1rem; color: var(--muted); max-width: 400px; margin-bottom: 1rem; }
 
 /* Hero visual — 2 tarjetas */
 .hero-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
@@ -239,9 +238,11 @@ main { padding-top: var(--nav-h); min-height: 100vh; }
 .carousel-wrapper {
   position: relative; overflow: hidden;
   border-radius: var(--radius-lg);
-  /* pausa si el usuario interactuó con el carrusel */
+  cursor: grab;
+  user-select: none;
   --is-paused: running;
 }
+.carousel-wrapper:active { cursor: grabbing; }
 .carousel-track {
   display: flex; gap: 1.5rem;
   animation: scrollTrack 28s linear infinite;
